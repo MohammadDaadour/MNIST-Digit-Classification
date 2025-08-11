@@ -51,7 +51,7 @@ history = model.fit(
 )
 
 # Save model
-model.save('mnist_model_aug.keras')
+model.save('mnist_model_aug.h5')
 
 # Evaluate
 y_pred = np.argmax(model.predict(x_test), axis=1)
