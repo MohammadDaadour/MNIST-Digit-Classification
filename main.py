@@ -2,40 +2,75 @@ import numpy as np
 import gradio as gr
 from tensorflow.keras.models import load_model
 from PIL import Image
+import traceback
 
-# Load model once
-model = load_model('mnist_model.keras')
+
+#load
+model = load_model('mnist_model_aug.keras')
+
+
+
 
 def preprocess_image(img):
-    """
-    input : image path or PIL Image
-    
-    Load an image, convert to grayscale, resize to 28x28,
-    scale using the same scaling as training, and flatten in.
-    
-    output: Image Array
-    """
-    img = img.convert('L')
-    img = img.resize((28, 28))
-    img_array = np.array(img)
-    img_array = (img_array / 255.0) * 9
-    img_array = img_array.reshape(1, -1)
-    return img_array
+    if img is None:
+        return None, "No image received"
+
+    try:
+        # If sketchpad dict format
+        if isinstance(img, dict) and "composite" in img:
+            img = img["composite"]
+
+        # If NumPy array, convert to PIL
+        if not isinstance(img, Image.Image):
+            img = Image.fromarray(np.array(img).astype("uint8"))
+
+        # Convert to grayscale
+        if img.mode != 'L':
+            img = img.convert('L')
+
+        # Resize to MNIST 28x28
+        img = img.resize((28, 28), Image.LANCZOS)
+        img_array = np.array(img)
+
+        # Invert if background is white
+        if np.mean(img_array) > 127:
+            img_array = 255 - img_array
+
+        # Normalize
+        img_array = img_array.astype(np.float32) / 255.0
+
+        # Reshape for model input
+        img_array = img_array.reshape(1, 28, 28, 1)
+
+        return img_array, None
+
+    except Exception as e:
+        return None, f"Error processing image: {str(e)}\n{traceback.format_exc()}"
+
+
+
 
 def predict(img):
-    processed_img = preprocess_image(img)
-    pred_probs = model.predict(processed_img)
-    predicted_digit = np.argmax(pred_probs)
-    return f"Predicted Digit: {predicted_digit}"
+    img_array, err = preprocess_image(img)
+    if err:
+        return err, None
 
-# Gradio Interface
+    preds = model.predict(img_array)
+    predicted_class = int(np.argmax(preds))
+    confidence = float(np.max(preds))
+
+    # Format confidence as percentage with two decimal places
+    return f"{predicted_class} ({confidence*100:.2f}% confidence)"
+
+
+
+
 interface = gr.Interface(
     fn=predict,
-    inputs=gr.Image(type="pil"),
+    inputs=gr.Sketchpad(type="pil"),
     outputs="text",
     title="MNIST Digit Classifier",
-    description="Upload a handwritten digit image, and the model will predict the digit."
+    description="Draw a digit (0-9) and get the prediction.",
+    allow_flagging="never"
 )
-
-if __name__ == "__main__":
-    interface.launch()
+interface.launch(share=True, debug=True)
