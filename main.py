@@ -4,10 +4,10 @@ from tensorflow.keras.models import load_model
 from PIL import Image
 import traceback
 
-
+print(gr.__version__)
 #load
 model = load_model('mnist_model_aug.keras')
-
+#
 
 
 
@@ -74,3 +74,4 @@ interface = gr.Interface(
     allow_flagging="never"
 )
 interface.launch(share=True, debug=True)
+
