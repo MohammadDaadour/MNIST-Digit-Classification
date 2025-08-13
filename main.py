@@ -5,6 +5,7 @@ from PIL import Image
 import traceback
 
 print(gr.__version__)
+
 #load
 model = load_model('mnist_model_aug.keras')
 #
@@ -28,13 +29,36 @@ def preprocess_image(img):
         if img.mode != 'L':
             img = img.convert('L')
 
-        # Resize to MNIST 28x28
-        img = img.resize((28, 28), Image.LANCZOS)
+        # Convert to numpy array
         img_array = np.array(img)
 
         # Invert if background is white
         if np.mean(img_array) > 127:
             img_array = 255 - img_array
+
+        # -------------------------
+        # Centerize and resize digit
+        coords = np.argwhere(img_array > 0)
+        if coords.size > 0:
+            y0, x0 = coords.min(axis=0)
+            y1, x1 = coords.max(axis=0) + 1
+            cropped = img_array[y0:y1, x0:x1]
+
+            # Resize cropped digit to fit 28x28 while keeping aspect ratio
+            h, w = cropped.shape
+            scale = min(28 / h, 28 / w)
+            new_h = max(1, int(h * scale))
+            new_w = max(1, int(w * scale))
+            cropped_img = Image.fromarray(cropped).resize((new_w, new_h), Image.LANCZOS)
+            cropped = np.array(cropped_img)
+
+            # Create blank 28x28 image
+            new_img = np.zeros((28, 28), dtype=np.uint8)
+            top = (28 - new_h) // 2
+            left = (28 - new_w) // 2
+            new_img[top:top+new_h, left:left+new_w] = cropped
+            img_array = new_img
+        # -------------------------
 
         # Normalize
         img_array = img_array.astype(np.float32) / 255.0
@@ -45,7 +69,9 @@ def preprocess_image(img):
         return img_array, None
 
     except Exception as e:
-        return None, f"Error processing image: {str(e)}\n{traceback.format_exc()}"
+        return None, str(e)
+
+
 
 
 
@@ -74,4 +100,4 @@ interface = gr.Interface(
     allow_flagging="never"
 )
 interface.launch(share=True, debug=True)
-
+ف
