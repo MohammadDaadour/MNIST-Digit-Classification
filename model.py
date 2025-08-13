@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 # Load data
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
-# Reshape for ImageDataGenerator (keep channels)
-x_train = np.expand_dims(x_train, -1) / 255.0  # (60000, 28, 28, 1)
-x_test = np.expand_dims(x_test, -1) / 255.0    # (10000, 28, 28, 1)
+#Normalization ans Scaling
+x_train = np.expand_dims(x_train, -1) / 255.0  
+x_test = np.expand_dims(x_test, -1) / 255.0    
 
 # Create augmentation generator
 datagen = ImageDataGenerator(
@@ -22,7 +22,7 @@ datagen = ImageDataGenerator(
 )
 datagen.fit(x_train)
 
-# Build simple dense model (will flatten inside model)
+
 model = keras.Sequential([
     keras.layers.Flatten(input_shape=(28, 28, 1)),
     keras.layers.Dense(256, activation='relu'),
@@ -35,14 +35,14 @@ model.compile(
     metrics=['accuracy']
 )
 
-# Early stopping
+
 early_stop = EarlyStopping(
     monitor='val_loss',
     patience=10,
     restore_best_weights=True
 )
 
-# Train using augmented data
+
 history = model.fit(
     datagen.flow(x_train, y_train, batch_size=128),
     validation_data=(x_test, y_test),

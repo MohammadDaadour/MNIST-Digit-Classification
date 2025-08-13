@@ -9,7 +9,7 @@ print(gr.__version__)
 
 #load
 model = load_model('mnist_model_aug.keras')
-#
+
 
 def preprocess_image(img):
     if img is None:
@@ -23,7 +23,7 @@ def preprocess_image(img):
             img = img.convert('L')
         img_array = np.array(img)
         
-        # Apply binary thresholding
+        
         thresh = threshold_otsu(img_array)
         img_array = (img_array > thresh).astype(np.uint8) * 255
         
@@ -61,7 +61,7 @@ def preprocess_image(img):
         img_array = img_array.reshape(1, 28, 28, 1)
         
         # Save preprocessed image for debugging
-        Image.fromarray((img_array.reshape(28, 28) * 255).astype(np.uint8)).save("preprocessed.png")
+        
         return img_array, None
     except Exception as e:
         return None, str(e)
