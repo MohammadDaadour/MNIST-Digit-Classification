@@ -12,22 +12,33 @@ model = load_model('mnist_model_aug.keras')
 
 
 def preprocess_image(img):
+    
+    """INPUT: Image.PIL
+    Converts IMage to 1D array and Garyscale and Centrized the Digit
+    OUTPUT: Image 1D array
+    """
     if img is None:
         return None, "No image received"
     try:
+        #Creating Image From Dict If input is Dict
         if isinstance(img, dict) and "composite" in img:
             img = img["composite"]
+        #Creating the image if Image is an array
         if not isinstance(img, Image.Image):
             img = Image.fromarray(np.array(img).astype("uint8"))
+
+        #Converting to Grayscale
         if img.mode != 'L':
             img = img.convert('L')
+
+        #Converting to numpy array
         img_array = np.array(img)
         
-        
+        #Converting Grays Pixels to B 
         thresh = threshold_otsu(img_array)
         img_array = (img_array > thresh).astype(np.uint8) * 255
         
-        # Invert if white background
+        # Invert if black background
         if np.mean(img_array) > 127:
             img_array = 255 - img_array
         
@@ -78,6 +89,7 @@ def predict(img):
     # Format confidence as percentage with two decimal places
     return f"{predicted_class} ({confidence*100:.2f}% confidence)"
 
+#Gradio Interface
 interface = gr.Interface(
     fn=predict,
     inputs=gr.Sketchpad(type="pil"),
